@@ -1,0 +1,2507 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>EmergencyLink Dashboard</title>
+
+
+<style>
+
+/* =========================
+   พื้นฐาน
+========================= */
+
+body{
+
+    margin:0;
+
+    font-family:
+    Arial,
+    "Noto Sans Thai",
+    sans-serif;
+
+    background:#f1f5f9;
+
+    color:#1e293b;
+
+}
+
+
+/* =========================
+   Header
+========================= */
+
+header{
+
+    background:#dc2626;
+
+    color:white;
+
+    padding:25px;
+
+    text-align:center;
+
+}
+
+header h1{
+
+    margin:0;
+
+}
+
+
+/* =========================
+   กล่องเสียง
+========================= */
+
+.sound-box{
+
+    background:white;
+
+    padding:15px;
+
+    text-align:center;
+
+    box-shadow:
+    0 2px 8px rgba(0,0,0,.1);
+
+}
+
+
+.sound-button{
+
+    background:#2563eb;
+
+    color:white;
+
+    border:none;
+
+    padding:10px 18px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+    margin-left:10px;
+
+}
+
+
+.sound-button:hover{
+
+    background:#1d4ed8;
+
+}
+
+
+/* =========================
+   แจ้งเตือนเหตุใหม่
+========================= */
+
+#newAlert{
+
+    display:none;
+
+    background:#dc2626;
+
+    color:white;
+
+    padding:18px;
+
+    margin:20px 0;
+
+    border-radius:15px;
+
+    text-align:center;
+
+    font-size:20px;
+
+    font-weight:bold;
+
+    box-shadow:
+    0 5px 15px
+    rgba(220,38,38,.35);
+
+    animation:
+    alertPulse .7s
+    infinite alternate;
+
+}
+
+
+@keyframes alertPulse{
+
+    from{
+
+        transform:scale(1);
+
+    }
+
+    to{
+
+        transform:scale(1.02);
+
+    }
+
+}
+
+
+/* =========================
+   Container
+========================= */
+
+.container{
+
+    max-width:1100px;
+
+    margin:25px auto;
+
+    padding:15px;
+
+}
+
+
+/* =========================
+   สถิติ
+========================= */
+
+.stats{
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(4,1fr);
+
+    gap:15px;
+
+    margin-bottom:20px;
+
+}
+
+
+.stat{
+
+    background:white;
+
+    padding:20px;
+
+    border-radius:15px;
+
+    text-align:center;
+
+    box-shadow:
+    0 3px 10px
+    rgba(0,0,0,.1);
+
+}
+
+
+.stat-icon{
+
+    font-size:30px;
+
+}
+
+
+.number{
+
+    font-size:35px;
+
+    font-weight:bold;
+
+    margin-top:10px;
+
+}
+
+
+/* =========================
+   กล่องทั่วไป
+========================= */
+
+.card{
+
+    background:white;
+
+    padding:20px;
+
+    border-radius:15px;
+
+    margin-bottom:20px;
+
+    box-shadow:
+    0 3px 10px
+    rgba(0,0,0,.1);
+
+}
+
+
+/* =========================
+   สรุปรถกำลังออก
+========================= */
+
+.vehicle-summary{
+
+    background:
+    linear-gradient(
+        135deg,
+        #eff6ff,
+        #dbeafe
+    );
+
+    border:
+    2px solid #2563eb;
+
+    padding:20px;
+
+    border-radius:15px;
+
+    margin-bottom:20px;
+
+}
+
+
+.vehicle-summary h2{
+
+    margin-top:0;
+
+}
+
+
+.vehicle-big-number{
+
+    font-size:48px;
+
+    font-weight:bold;
+
+    color:#2563eb;
+
+}
+
+
+/* =========================
+   Search
+========================= */
+
+.search-box{
+
+    display:grid;
+
+    grid-template-columns:
+    2fr 1fr 1fr 1fr;
+
+    gap:10px;
+
+    margin-bottom:15px;
+
+}
+
+
+.search-input,
+.search-select{
+
+    width:100%;
+
+    padding:12px;
+
+    border:
+    1px solid #cbd5e1;
+
+    border-radius:10px;
+
+    font-size:15px;
+
+    background:white;
+
+    box-sizing:border-box;
+
+}
+
+
+.search-input:focus,
+.search-select:focus{
+
+    outline:none;
+
+    border-color:#2563eb;
+
+}
+
+
+.clear-button{
+
+    border:none;
+
+    background:#64748b;
+
+    color:white;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+}
+
+
+.result{
+
+    color:#64748b;
+
+    margin-top:15px;
+
+}
+
+
+/* =========================
+   Incident
+========================= */
+
+.incident{
+
+    border:
+    2px solid #e2e8f0;
+
+    border-radius:15px;
+
+    padding:18px;
+
+    margin-bottom:15px;
+
+}
+
+
+.incident.very-serious{
+
+    border-color:#dc2626;
+
+    background:#fff7f7;
+
+}
+
+
+.incident.serious{
+
+    border-color:#f97316;
+
+    background:#fffaf5;
+
+}
+
+
+.incident.moderate{
+
+    border-color:#eab308;
+
+}
+
+
+/* =========================
+   สรุปเหตุ
+========================= */
+
+.incident-summary{
+
+    background:#f8fafc;
+
+    border-radius:12px;
+
+    padding:15px;
+
+    margin:
+    15px 0;
+
+}
+
+
+.incident-summary-title{
+
+    font-size:18px;
+
+    font-weight:bold;
+
+    margin-bottom:12px;
+
+}
+
+
+.summary-row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    gap:15px;
+
+    padding:8px 0;
+
+    border-bottom:
+    1px solid #e2e8f0;
+
+}
+
+
+.summary-row:last-child{
+
+    border-bottom:none;
+
+}
+
+
+.summary-label{
+
+    font-weight:bold;
+
+    color:#475569;
+
+}
+
+
+.summary-value{
+
+    text-align:right;
+
+}
+
+
+/* =========================
+   รถ
+========================= */
+
+.vehicle-box{
+
+    background:#ecfdf5;
+
+    border:
+    2px solid #16a34a;
+
+    border-radius:12px;
+
+    padding:15px;
+
+    margin:
+    15px 0;
+
+}
+
+
+.vehicle-number{
+
+    font-size:28px;
+
+    font-weight:bold;
+
+    color:#15803d;
+
+}
+
+
+.vehicle-progress{
+
+    width:100%;
+
+    height:12px;
+
+    background:#d1fae5;
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    margin-top:10px;
+
+}
+
+
+.vehicle-progress-bar{
+
+    height:100%;
+
+    background:#16a34a;
+
+    transition:
+    width .3s;
+
+}
+
+
+/* =========================
+   Detail
+========================= */
+
+.detail{
+
+    background:#f8fafc;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    margin-top:10px;
+
+    line-height:1.6;
+
+}
+
+
+/* =========================
+   ปุ่ม
+========================= */
+
+button{
+
+    border:none;
+
+    padding:10px 15px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+    margin:3px;
+
+}
+
+
+.blue{
+
+    background:#2563eb;
+
+    color:white;
+
+}
+
+
+.green{
+
+    background:#16a34a;
+
+    color:white;
+
+}
+
+
+.orange{
+
+    background:#f97316;
+
+    color:white;
+
+}
+
+
+.gray{
+
+    background:#64748b;
+
+    color:white;
+
+}
+
+
+.red{
+
+    background:#dc2626;
+
+    color:white;
+
+}
+
+
+/* =========================
+   Status
+========================= */
+
+.status{
+
+    display:inline-block;
+
+    padding:6px 10px;
+
+    border-radius:20px;
+
+    background:#dbeafe;
+
+    color:#1d4ed8;
+
+    font-size:13px;
+
+    font-weight:bold;
+
+}
+
+
+/* =========================
+   Empty
+========================= */
+
+.empty{
+
+    text-align:center;
+
+    padding:40px;
+
+    color:#64748b;
+
+    font-size:17px;
+
+}
+
+
+/* =========================
+   มือถือ
+========================= */
+
+@media(max-width:850px){
+
+    .stats{
+
+        grid-template-columns:
+        repeat(2,1fr);
+
+    }
+
+
+    .search-box{
+
+        grid-template-columns:
+        1fr 1fr;
+
+    }
+
+}
+
+
+@media(max-width:500px){
+
+    .stats{
+
+        grid-template-columns:1fr;
+
+    }
+
+
+    .search-box{
+
+        grid-template-columns:1fr;
+
+    }
+
+
+    .sound-button{
+
+        margin-top:10px;
+
+        margin-left:0;
+
+    }
+
+
+    .summary-row{
+
+        display:block;
+
+    }
+
+
+    .summary-value{
+
+        text-align:left;
+
+        margin-top:4px;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+<h1>🚨 EmergencyLink</h1>
+
+<p>ระบบจัดการเหตุฉุกเฉิน</p>
+
+</header>
+
+
+<!-- =========================
+     ระบบเสียง
+========================= -->
+
+<div class="sound-box">
+
+<span id="soundStatus">
+
+🔇 เสียงแจ้งเตือนปิดอยู่
+
+</span>
+
+
+<button
+class="sound-button"
+onclick="enableSound()">
+
+🔊 เปิดเสียงแจ้งเตือน
+
+</button>
+
+</div>
+
+
+<div class="container">
+
+
+<!-- =========================
+     แจ้งเตือน
+========================= -->
+
+<div id="newAlert">
+
+🚨🚨 มีเหตุฉุกเฉินใหม่เข้ามา! 🚨🚨
+
+</div>
+
+
+<!-- =========================
+     สถิติ
+========================= -->
+
+<div class="stats">
+
+
+<div class="stat">
+
+<div class="stat-icon">
+
+🚨
+
+</div>
+
+<div>
+
+เหตุทั้งหมด
+
+</div>
+
+<div
+class="number"
+id="total">
+
+0
+
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-icon">
+
+⏳
+
+</div>
+
+<div>
+
+รอรับเรื่อง
+
+</div>
+
+<div
+class="number"
+id="waiting">
+
+0
+
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-icon">
+
+🚑
+
+</div>
+
+<div>
+
+กำลังดำเนินการ
+
+</div>
+
+<div
+class="number"
+id="responding">
+
+0
+
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-icon">
+
+🚗
+
+</div>
+
+<div>
+
+รถที่จัดสรร
+
+</div>
+
+<div
+class="number"
+id="vehicles">
+
+0
+
+</div>
+
+</div>
+
+
+</div>
+
+
+<!-- =========================
+     สรุปรถกำลังออก
+========================= -->
+
+<div class="vehicle-summary">
+
+<h2>
+
+🚑 รถที่กำลังออกปฏิบัติการ
+
+</h2>
+
+
+<div
+class="vehicle-big-number"
+id="activeVehicles">
+
+0
+
+</div>
+
+
+<div>
+
+คันกำลังออกไปที่เกิดเหตุ
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     ค้นหา
+========================= -->
+
+<div class="card">
+
+<h2>
+
+🔎 ค้นหาและกรองเหตุการณ์
+
+</h2>
+
+
+<div class="search-box">
+
+
+<input
+type="text"
+id="searchInput"
+class="search-input"
+placeholder="🔎 ค้นหา เช่น ไฟไหม้ หรือรายละเอียด">
+
+
+<select
+id="typeFilter"
+class="search-select">
+
+<option value="">
+
+🚨 ทุกประเภท
+
+</option>
+
+<option value="ไฟไหม้">
+
+🔥 ไฟไหม้
+
+</option>
+
+<option value="อุบัติเหตุ">
+
+🚗 อุบัติเหตุ
+
+</option>
+
+<option value="เหตุอันตราย">
+
+🚨 เหตุอันตราย
+
+</option>
+
+<option value="โจรกรรม">
+
+🏠 โจรกรรม
+
+</option>
+
+<option value="เหตุฉุกเฉินทางการแพทย์">
+
+🏥 การแพทย์
+
+</option>
+
+<option value="อื่นๆ">
+
+❓ อื่นๆ
+
+</option>
+
+</select>
+
+
+<select
+id="severityFilter"
+class="search-select">
+
+<option value="">
+
+🔴 ทุกระดับ
+
+</option>
+
+<option value="ร้ายแรงมาก">
+
+🔴 ร้ายแรงมาก
+
+</option>
+
+<option value="ร้ายแรง">
+
+🟠 ร้ายแรง
+
+</option>
+
+<option value="ปานกลาง">
+
+🟡 ปานกลาง
+
+</option>
+
+</select>
+
+
+<select
+id="statusFilter"
+class="search-select">
+
+<option value="">
+
+📋 ทุกสถานะ
+
+</option>
+
+<option value="waiting">
+
+⏳ รอรับเรื่อง
+
+</option>
+
+<option value="responding">
+
+🚑 กำลังดำเนินการ
+
+</option>
+
+<option value="arrived">
+
+📍 ถึงที่เกิดเหตุ
+
+</option>
+
+<option value="closed">
+
+✅ ปิดเหตุแล้ว
+
+</option>
+
+</select>
+
+
+</div>
+
+
+<button
+class="clear-button"
+onclick="clearFilters()">
+
+✖ ล้างตัวกรอง
+
+</button>
+
+
+<div
+class="result"
+id="result">
+
+กำลังแสดง 0 รายการ
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     รายการเหตุ
+========================= -->
+
+<div class="card">
+
+<h2>
+
+🚨 รายการเหตุการณ์
+
+</h2>
+
+
+<div id="incidentList">
+
+<div class="empty">
+
+📭 ยังไม่มีเหตุการณ์
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     ปุ่ม
+========================= -->
+
+<div class="card">
+
+
+<button
+class="blue"
+onclick="window.location.href='index.html'">
+
+📱 ไปหน้าแจ้งเหตุ
+
+</button>
+
+
+<button
+class="green"
+onclick="loadData()">
+
+🔄 รีเฟรชข้อมูล
+
+</button>
+
+
+<button
+class="red"
+onclick="logout()">
+
+🚪 ออกจากระบบ
+
+</button>
+
+
+</div>
+
+
+</div>
+
+
+<script>
+
+
+const KEY =
+"emergencyIncidents";
+
+
+/* =========================
+   ระบบเสียง
+========================= */
+
+let soundEnabled =
+false;
+
+
+let audioContext =
+null;
+
+
+function enableSound(){
+
+    const AudioContext =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+
+    if(!AudioContext){
+
+        alert(
+            "เบราว์เซอร์นี้ไม่รองรับระบบเสียง"
+        );
+
+        return;
+
+    }
+
+
+    if(!audioContext){
+
+        audioContext =
+            new AudioContext();
+
+    }
+
+
+    if(
+        audioContext.state ===
+        "suspended"
+    ){
+
+        audioContext.resume();
+
+    }
+
+
+    soundEnabled =
+        true;
+
+
+    document.getElementById(
+        "soundStatus"
+    ).textContent =
+        "🔊 เสียงแจ้งเตือนเปิดอยู่";
+
+
+    playNotificationSound();
+
+}
+
+
+/* =========================
+   เสียงแจ้งเตือน
+========================= */
+
+function playNotificationSound(){
+
+    if(
+        !soundEnabled ||
+        !audioContext
+    ){
+
+        return;
+
+    }
+
+
+    const now =
+        audioContext.currentTime;
+
+
+    const oscillator =
+        audioContext.createOscillator();
+
+
+    const gain =
+        audioContext.createGain();
+
+
+    oscillator.type =
+        "sine";
+
+
+    oscillator.frequency.setValueAtTime(
+        880,
+        now
+    );
+
+
+    oscillator.frequency.setValueAtTime(
+        660,
+        now + 0.2
+    );
+
+
+    oscillator.frequency.setValueAtTime(
+        880,
+        now + 0.4
+    );
+
+
+    gain.gain.setValueAtTime(
+        0.001,
+        now
+    );
+
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.3,
+        now + 0.03
+    );
+
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        now + 0.7
+    );
+
+
+    oscillator.connect(gain);
+
+    gain.connect(
+        audioContext.destination
+    );
+
+
+    oscillator.start(now);
+
+    oscillator.stop(
+        now + 0.7
+    );
+
+}
+
+
+/* =========================
+   อ่านข้อมูล
+========================= */
+
+function getData(){
+
+    const data =
+        localStorage.getItem(KEY);
+
+
+    if(!data){
+
+        return [];
+
+    }
+
+
+    try{
+
+        return JSON.parse(data);
+
+    }
+    catch(error){
+
+        return [];
+
+    }
+
+}
+
+
+/* =========================
+   ตรวจเหตุใหม่
+========================= */
+
+let lastIncidentIds =
+    getData().map(function(item){
+
+        return item.id;
+
+    });
+
+
+let firstCheck =
+    true;
+
+
+function checkNewIncident(){
+
+    const data =
+        getData();
+
+
+    const currentIds =
+        data.map(function(item){
+
+            return item.id;
+
+        });
+
+
+    if(!firstCheck){
+
+        const hasNew =
+            currentIds.some(function(id){
+
+                return !lastIncidentIds.includes(id);
+
+            });
+
+
+        if(hasNew){
+
+            playNotificationSound();
+
+            showNewAlert();
+
+        }
+
+    }
+
+
+    lastIncidentIds =
+        currentIds;
+
+
+    firstCheck =
+        false;
+
+}
+
+
+/* =========================
+   แสดงแจ้งเตือน
+========================= */
+
+function showNewAlert(){
+
+    const alertBox =
+        document.getElementById(
+            "newAlert"
+        );
+
+
+    alertBox.style.display =
+        "block";
+
+
+    setTimeout(function(){
+
+        alertBox.style.display =
+            "none";
+
+    },5000);
+
+}
+
+
+/* =========================
+   สถานะ
+========================= */
+
+function getStatus(status){
+
+    if(status === "waiting"){
+
+        return "⏳ รอรับเรื่อง";
+
+    }
+
+
+    if(status === "responding"){
+
+        return "🚑 กำลังดำเนินการ";
+
+    }
+
+
+    if(status === "arrived"){
+
+        return "📍 ถึงที่เกิดเหตุ";
+
+    }
+
+
+    if(status === "closed"){
+
+        return "✅ ปิดเหตุแล้ว";
+
+    }
+
+
+    return "⏳ รอรับเรื่อง";
+
+}
+
+
+/* =========================
+   Filter
+========================= */
+
+function filterData(){
+
+    const data =
+        getData();
+
+
+    const search =
+        document
+        .getElementById(
+            "searchInput"
+        )
+        .value
+        .toLowerCase()
+        .trim();
+
+
+    const type =
+        document
+        .getElementById(
+            "typeFilter"
+        )
+        .value;
+
+
+    const severity =
+        document
+        .getElementById(
+            "severityFilter"
+        )
+        .value;
+
+
+    const status =
+        document
+        .getElementById(
+            "statusFilter"
+        )
+        .value;
+
+
+    return data.filter(
+        function(item){
+
+
+            let searchOK =
+                true;
+
+
+            if(search){
+
+                const text = [
+
+                    item.emergencyType,
+
+                    item.detail,
+
+                    item.peopleCount,
+
+                    item.latitude,
+
+                    item.longitude
+
+                ]
+                .join(" ")
+                .toLowerCase();
+
+
+                searchOK =
+                    text.includes(search);
+
+            }
+
+
+            const typeOK =
+                !type ||
+                item.emergencyType ===
+                type;
+
+
+            const severityOK =
+                !severity ||
+                item.dangerLevel ===
+                severity;
+
+
+            const statusOK =
+                !status ||
+                item.status ===
+                status;
+
+
+            return (
+
+                searchOK &&
+                typeOK &&
+                severityOK &&
+                statusOK
+
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================
+   แสดงข้อมูล
+========================= */
+
+function loadData(){
+
+    const data =
+        getData();
+
+
+    /* เหตุทั้งหมด */
+
+    document.getElementById(
+        "total"
+    ).textContent =
+        data.length;
+
+
+    /* รอรับเรื่อง */
+
+    document.getElementById(
+        "waiting"
+    ).textContent =
+        data.filter(
+            function(item){
+
+                return item.status ===
+                    "waiting";
+
+            }
+        ).length;
+
+
+    /* กำลังดำเนินการ */
+
+    document.getElementById(
+        "responding"
+    ).textContent =
+        data.filter(
+            function(item){
+
+                return (
+
+                    item.status ===
+                    "responding"
+
+                    ||
+
+                    item.status ===
+                    "arrived"
+
+                );
+
+            }
+        ).length;
+
+
+    /* รถทั้งหมดที่จัด */
+
+    const totalVehicles =
+        data.reduce(
+            function(total,item){
+
+                return total +
+                    Number(
+                        item.vehicles ||
+                        0
+                    );
+
+            },
+            0
+        );
+
+
+    document.getElementById(
+        "vehicles"
+    ).textContent =
+        totalVehicles;
+
+
+    /* =========================
+       รถที่กำลังออก
+    ========================= */
+
+    const activeVehicles =
+        data.reduce(
+            function(total,item){
+
+                if(
+                    item.status ===
+                    "responding"
+                    ||
+                    item.status ===
+                    "arrived"
+                ){
+
+                    return total +
+                        Number(
+                            item.vehicles ||
+                            0
+                        );
+
+                }
+
+
+                return total;
+
+            },
+            0
+        );
+
+
+    document.getElementById(
+        "activeVehicles"
+    ).textContent =
+        activeVehicles;
+
+
+    /* =========================
+       Filter
+    ========================= */
+
+    const filtered =
+        filterData();
+
+
+    document.getElementById(
+        "result"
+    ).textContent =
+
+        "กำลังแสดง " +
+        filtered.length +
+        " จาก " +
+        data.length +
+        " รายการ";
+
+
+    const list =
+        document.getElementById(
+            "incidentList"
+        );
+
+
+    if(filtered.length === 0){
+
+        list.innerHTML = `
+
+            <div class="empty">
+
+                📭 ไม่พบเหตุการณ์
+
+                <br><br>
+
+                ลองเปลี่ยนคำค้นหา
+                หรือตัวกรอง
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    /* ร้ายแรงขึ้นก่อน */
+
+    const order = {
+
+        "ร้ายแรงมาก":3,
+
+        "ร้ายแรง":2,
+
+        "ปานกลาง":1
+
+    };
+
+
+    filtered.sort(
+        function(a,b){
+
+            return (
+
+                (order[b.dangerLevel] || 0)
+
+                -
+
+                (order[a.dangerLevel] || 0)
+
+            );
+
+        }
+    );
+
+
+    /* =========================
+       สร้างการ์ด
+    ========================= */
+
+    list.innerHTML =
+        filtered
+        .map(
+            function(item){
+
+
+                let dangerClass =
+                    "";
+
+
+                if(
+                    item.dangerLevel ===
+                    "ร้ายแรงมาก"
+                ){
+
+                    dangerClass =
+                        "very-serious";
+
+                }
+                else if(
+                    item.dangerLevel ===
+                    "ร้ายแรง"
+                ){
+
+                    dangerClass =
+                        "serious";
+
+                }
+                else{
+
+                    dangerClass =
+                        "moderate";
+
+                }
+
+
+                const vehicles =
+                    Number(
+                        item.vehicles ||
+                        0
+                    );
+
+
+                const needed =
+                    Number(
+                        item.neededVehicles ||
+                        1
+                    );
+
+
+                let progress =
+                    (
+                        vehicles /
+                        needed
+                    ) * 100;
+
+
+                if(progress > 100){
+
+                    progress = 100;
+
+                }
+
+
+                /* รถกำลังออก */
+
+                const active =
+                    (
+                        item.status ===
+                        "responding"
+
+                        ||
+
+                        item.status ===
+                        "arrived"
+                    );
+
+
+                return `
+
+                <div
+                    class="incident ${dangerClass}">
+
+
+                    <h3>
+
+                        🚨
+                        ${
+                            item.emergencyType ||
+                            "เหตุฉุกเฉิน"
+                        }
+
+                    </h3>
+
+
+                    <!-- =================
+                         สรุปเหตุการณ์
+                    ================= -->
+
+                    <div
+                        class="incident-summary">
+
+                        <div
+                            class="incident-summary-title">
+
+                            📝 สรุปรายละเอียดเหตุการณ์
+
+                        </div>
+
+
+                        <div class="summary-row">
+
+                            <div
+                                class="summary-label">
+
+                                ประเภทเหตุ
+
+                            </div>
+
+                            <div
+                                class="summary-value">
+
+                                ${
+                                    item.emergencyType ||
+                                    "-"
+                                }
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="summary-row">
+
+                            <div
+                                class="summary-label">
+
+                                ระดับความรุนแรง
+
+                            </div>
+
+                            <div
+                                class="summary-value">
+
+                                ${
+                                    item.dangerLevel ||
+                                    "-"
+                                }
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="summary-row">
+
+                            <div
+                                class="summary-label">
+
+                                จำนวนผู้เกี่ยวข้อง
+
+                            </div>
+
+                            <div
+                                class="summary-value">
+
+                                👥
+                                ${
+                                    item.peopleCount ||
+                                    0
+                                }
+                                คน
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="summary-row">
+
+                            <div
+                                class="summary-label">
+
+                                สถานะ
+
+                            </div>
+
+                            <div
+                                class="summary-value">
+
+                                <span class="status">
+
+                                    ${
+                                        getStatus(
+                                            item.status
+                                        )
+                                    }
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        ${
+                            item.latitude &&
+                            item.longitude
+
+                            ?
+
+                            `
+
+                            <div class="summary-row">
+
+                                <div
+                                    class="summary-label">
+
+                                    พิกัด
+
+                                </div>
+
+                                <div
+                                    class="summary-value">
+
+                                    📍
+                                    ${
+                                        item.latitude
+                                    },
+                                    ${
+                                        item.longitude
+                                    }
+
+                                </div>
+
+                            </div>
+
+                            `
+
+                            :
+
+                            ""
+
+                        }
+
+
+                    </div>
+
+
+                    <!-- =================
+                         รายละเอียด
+                    ================= -->
+
+                    <div class="detail">
+
+                        <b>📄 รายละเอียดเพิ่มเติม</b>
+
+                        <br><br>
+
+                        ${
+                            item.detail ||
+                            "ไม่มีรายละเอียดเพิ่มเติม"
+                        }
+
+                    </div>
+
+
+                    <!-- =================
+                         รถ
+                    ================= -->
+
+                    <div class="vehicle-box">
+
+                        <b>
+
+                            🚑 รถสำหรับเหตุการณ์นี้
+
+                        </b>
+
+
+                        <div
+                            class="vehicle-number">
+
+                            ${
+                                vehicles
+                            }
+
+                            /
+
+                            ${
+                                needed
+                            }
+
+                            คัน
+
+                        </div>
+
+
+                        <div>
+
+                            ${
+                                active
+                                ?
+
+                                "🚨 รถกำลังออกไปที่เกิดเหตุ"
+
+                                :
+
+                                "⏸️ รถยังไม่ได้ออกปฏิบัติการ"
+
+                            }
+
+                        </div>
+
+
+                        <div
+                            class="vehicle-progress">
+
+                            <div
+                                class="vehicle-progress-bar"
+                                style="width:${progress}%">
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- =================
+                         ปุ่ม
+                    ================= -->
+
+
+                    ${
+                        item.latitude &&
+                        item.longitude
+
+                        ?
+
+                        `
+
+                        <button
+                            class="green"
+                            onclick="openMap(
+                                ${item.latitude},
+                                ${item.longitude}
+                            )">
+
+                            📍 เปิดแผนที่
+
+                        </button>
+
+                        `
+
+                        :
+
+                        ""
+
+                    }
+
+
+                    <button
+                        class="orange"
+                        onclick="addVehicle(
+                            ${item.id}
+                        )">
+
+                        🚑 + รถ
+
+                    </button>
+
+
+                    <button
+                        class="gray"
+                        onclick="changeStatus(
+                            ${item.id},
+                            'responding'
+                        )">
+
+                        🚑 กำลังดำเนินการ
+
+                    </button>
+
+
+                    <button
+                        class="blue"
+                        onclick="changeStatus(
+                            ${item.id},
+                            'arrived'
+                        )">
+
+                        📍 ถึงที่เกิดเหตุ
+
+                    </button>
+
+
+                    <button
+                        class="green"
+                        onclick="changeStatus(
+                            ${item.id},
+                            'closed'
+                        )">
+
+                        ✅ ปิดเหตุ
+
+                    </button>
+
+
+                    <button
+                        class="red"
+                        onclick="deleteIncident(
+                            ${item.id}
+                        )">
+
+                        🗑️ ลบ
+
+                    </button>
+
+
+                </div>
+
+                `;
+
+            }
+        )
+        .join("");
+
+}
+
+
+/* =========================
+   เพิ่มรถ
+========================= */
+
+function addVehicle(id){
+
+    const data =
+        getData();
+
+
+    const item =
+        data.find(
+            function(x){
+
+                return Number(x.id) ===
+                    Number(id);
+
+            }
+        );
+
+
+    if(!item){
+
+        return;
+
+    }
+
+
+    const needed =
+        Number(
+            item.neededVehicles ||
+            1
+        );
+
+
+    const current =
+        Number(
+            item.vehicles ||
+            0
+        );
+
+
+    if(
+        current >= needed
+    ){
+
+        alert(
+            "🚑 รถครบตามจำนวนที่ระบบแนะนำแล้ว"
+        );
+
+        return;
+
+    }
+
+
+    item.vehicles =
+        current + 1;
+
+
+    localStorage.setItem(
+        KEY,
+        JSON.stringify(data)
+    );
+
+
+    loadData();
+
+}
+
+
+/* =========================
+   เปลี่ยนสถานะ
+========================= */
+
+function changeStatus(
+    id,
+    status
+){
+
+    const data =
+        getData();
+
+
+    const item =
+        data.find(
+            function(x){
+
+                return Number(x.id) ===
+                    Number(id);
+
+            }
+        );
+
+
+    if(!item){
+
+        return;
+
+    }
+
+
+    item.status =
+        status;
+
+
+    localStorage.setItem(
+        KEY,
+        JSON.stringify(data)
+    );
+
+
+    loadData();
+
+}
+
+
+/* =========================
+   ลบเหตุการณ์
+========================= */
+
+function deleteIncident(id){
+
+    if(
+        !confirm(
+            "ต้องการลบเหตุการณ์นี้ใช่ไหม?"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    const data =
+        getData();
+
+
+    const newData =
+        data.filter(
+            function(item){
+
+                return Number(item.id) !==
+                    Number(id);
+
+            }
+        );
+
+
+    localStorage.setItem(
+        KEY,
+        JSON.stringify(newData)
+    );
+
+
+    loadData();
+
+}
+
+
+/* =========================
+   เปิดแผนที่
+========================= */
+
+function openMap(
+    latitude,
+    longitude
+){
+
+    window.open(
+
+        "https://www.google.com/maps?q=" +
+        latitude +
+        "," +
+        longitude,
+
+        "_blank"
+
+    );
+
+}
+
+
+/* =========================
+   ล้าง Filter
+========================= */
+
+function clearFilters(){
+
+    document.getElementById(
+        "searchInput"
+    ).value = "";
+
+
+    document.getElementById(
+        "typeFilter"
+    ).value = "";
+
+
+    document.getElementById(
+        "severityFilter"
+    ).value = "";
+
+
+    document.getElementById(
+        "statusFilter"
+    ).value = "";
+
+
+    loadData();
+
+}
+
+
+/* =========================
+   Logout
+========================= */
+
+function logout(){
+
+    localStorage.removeItem(
+        "emergencyOfficerLogin"
+    );
+
+
+    window.location.href =
+        "login.html";
+
+}
+
+
+/* =========================
+   Search
+========================= */
+
+document
+.getElementById(
+    "searchInput"
+)
+.addEventListener(
+    "input",
+    loadData
+);
+
+
+document
+.getElementById(
+    "typeFilter"
+)
+.addEventListener(
+    "change",
+    loadData
+);
+
+
+document
+.getElementById(
+    "severityFilter"
+)
+.addEventListener(
+    "change",
+    loadData
+);
+
+
+document
+.getElementById(
+    "statusFilter"
+)
+.addEventListener(
+    "change",
+    loadData
+);
+
+
+/* =========================
+   เริ่มต้น
+========================= */
+
+loadData();
+
+
+/* =========================
+   ตรวจข้อมูลทุก 1 วินาที
+========================= */
+
+setInterval(
+    function(){
+
+        checkNewIncident();
+
+        loadData();
+
+    },
+    1000
+);
+
+
+</script>
+
+</body>
+
+</html>

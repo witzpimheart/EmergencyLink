@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EmergencyLink - เจ้าหน้าที่</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-family: Arial, "Tahoma", sans-serif;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #111827,
+                    #1e293b
+                );
+        }
+
+        .login-box {
+
+            width: 100%;
+            max-width: 420px;
+
+            margin: 20px;
+            padding: 35px;
+
+            background: white;
+
+            border-radius: 20px;
+
+            box-shadow:
+                0 15px 40px
+                rgba(0,0,0,0.3);
+
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 55px;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 10px 0 5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+
+            padding: 14px;
+
+            margin-bottom: 18px;
+
+            border: 1px solid #cbd5e1;
+
+            border-radius: 10px;
+
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        button {
+            width: 100%;
+
+            padding: 14px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            background: #2563eb;
+
+            color: white;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .error {
+
+            display: none;
+
+            margin-top: 15px;
+
+            padding: 12px;
+
+            border-radius: 10px;
+
+            background: #fee2e2;
+
+            color: #991b1b;
+
+            text-align: center;
+
+            font-weight: bold;
+
+        }
+
+        .demo {
+
+            margin-top: 20px;
+
+            padding: 12px;
+
+            background: #f8fafc;
+
+            border-radius: 10px;
+
+            color: #64748b;
+
+            font-size: 13px;
+
+            text-align: center;
+
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="login-box">
+
+        <div class="logo">
+            🚨
+        </div>
+
+        <h1>
+            EmergencyLink
+        </h1>
+
+        <div class="subtitle">
+            เข้าสู่ระบบสำหรับเจ้าหน้าที่
+        </div>
+
+
+        <form onsubmit="login(event)">
+
+            <label>
+                👤 ชื่อผู้ใช้
+            </label>
+
+            <input
+                type="text"
+                id="username"
+                placeholder="กรอกชื่อผู้ใช้"
+                required
+            >
+
+
+            <label>
+                🔒 รหัสผ่าน
+            </label>
+
+            <input
+                type="password"
+                id="password"
+                placeholder="กรอกรหัสผ่าน"
+                required
+            >
+
+
+            <button type="submit">
+
+                🔐 เข้าสู่ระบบ
+
+            </button>
+
+        </form>
+
+
+        <div
+            id="error"
+            class="error">
+
+            ❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
+
+        </div>
+
+
+        <div class="demo">
+
+            🧪 ระบบต้นแบบสำหรับโครงงาน
+
+            <br><br>
+
+            Username: <b>admin</b>
+
+            <br>
+
+            Password: <b>1234</b>
+
+        </div>
+
+    </div>
+
+
+<script>
+
+function login(event) {
+
+    event.preventDefault();
+
+
+    const username =
+        document.getElementById(
+            "username"
+        ).value;
+
+
+    const password =
+        document.getElementById(
+            "password"
+        ).value;
+
+
+    // บัญชีสำหรับระบบต้นแบบ
+
+    if (
+        username === "admin" &&
+        password === "1234"
+    ) {
+
+        localStorage.setItem(
+            "emergencyOfficerLogin",
+            "true"
+        );
+
+
+        window.location.href =
+            "dashboard.html";
+
+    }
+
+    else {
+
+        document.getElementById(
+            "error"
+        ).style.display =
+            "block";
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
