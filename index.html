@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -447,7 +446,22 @@
     </div>
 
 
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
+
+        // =========================
+        // เชื่อมต่อ Supabase
+        // =========================
+
+        const SUPABASE_URL = "https://jzlxozjcppjntnqanzzi.supabase.co";
+        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_qprI9vxJF_VwQxWVR_Mn2Q_9k-irViN";
+
+        const supabaseClient = supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_PUBLISHABLE_KEY
+        );
 
         // =========================
         // ไปหน้า Login เจ้าหน้าที่
@@ -726,7 +740,7 @@
         // แจ้งเหตุ
         // =========================
 
-        function sendEmergency() {
+        async function sendEmergency() {
 
             if (emergencyType === "") {
 
@@ -814,20 +828,30 @@
 
 
             // =========================
-            // บันทึกลง LocalStorage
+            // บันทึกลง Supabase
             // =========================
 
-            let incidents =
-                JSON.parse(
-                    localStorage.getItem("emergencyIncidents")
-                ) || [];
+            const { error } = await supabaseClient
+                .from("incidents")
+                .insert({
+                    id: emergencyData.id,
+                    emergency_type: emergencyData.emergencyType,
+                    people_count: emergencyData.peopleCount,
+                    danger_level: emergencyData.dangerLevel,
+                    detail: emergencyData.detail,
+                    latitude: emergencyData.latitude,
+                    longitude: emergencyData.longitude,
+                    status: emergencyData.status,
+                    vehicles: emergencyData.vehicles,
+                    needed_vehicles: emergencyData.neededVehicles,
+                    created_at: new Date().toISOString()
+                });
 
-            incidents.push(emergencyData);
-
-            localStorage.setItem(
-                "emergencyIncidents",
-                JSON.stringify(incidents)
-            );
+            if (error) {
+                console.error("Supabase error:", error);
+                alert("❌ ส่งแจ้งเหตุไม่สำเร็จ\n" + error.message);
+                return;
+            }
 
 
             // =========================
@@ -965,4 +989,3 @@
 
 </body>
 </html>
-```
