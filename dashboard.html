@@ -1153,986 +1153,218 @@ onclick="logout()">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-
 const SUPABASE_URL = "https://jzlxozjcppjntnqanzzi.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_qprI9vxJF_VwQxWVR_Mn2Q_9k-irViN";
-const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
-);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-const KEY =
-"emergencyIncidents";
-
-
-/* =========================
-   ระบบเสียง
-========================= */
-
-let soundEnabled =
-false;
-
-
-let audioContext =
-null;
-
+let data = [];
+let soundEnabled = false;
+let audioContext = null;
+let knownIds = new Set();
+let initialized = false;
+let loading = false;
 
 function enableSound(){
-
-    const AudioContext =
-        window.AudioContext ||
-        window.webkitAudioContext;
-
-
-    if(!AudioContext){
-
-        alert(
-            "เบราว์เซอร์นี้ไม่รองรับระบบเสียง"
-        );
-
-        return;
-
-    }
-
-
-    if(!audioContext){
-
-        audioContext =
-            new AudioContext();
-
-    }
-
-
-    if(
-        audioContext.state ===
-        "suspended"
-    ){
-
-        audioContext.resume();
-
-    }
-
-
-    soundEnabled =
-        true;
-
-
-    document.getElementById(
-        "soundStatus"
-    ).textContent =
-        "🔊 เสียงแจ้งเตือนเปิดอยู่";
-
-
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC){ alert("เบราว์เซอร์นี้ไม่รองรับระบบเสียง"); return; }
+    if(!audioContext) audioContext = new AC();
+    if(audioContext.state === "suspended") audioContext.resume();
+    soundEnabled = true;
+    const el=document.getElementById("soundStatus");
+    if(el) el.textContent="🔊 เสียงแจ้งเตือนเปิดอยู่";
     playNotificationSound();
-
 }
-
-
-/* =========================
-   เสียงแจ้งเตือน
-========================= */
 
 function playNotificationSound(){
-
-    if(
-        !soundEnabled ||
-        !audioContext
-    ){
-
-        return;
-
-    }
-
-
-    const now =
-        audioContext.currentTime;
-
-
-    const oscillator =
-        audioContext.createOscillator();
-
-
-    const gain =
-        audioContext.createGain();
-
-
-    oscillator.type =
-        "sine";
-
-
-    oscillator.frequency.setValueAtTime(
-        880,
-        now
-    );
-
-
-    oscillator.frequency.setValueAtTime(
-        660,
-        now + 0.2
-    );
-
-
-    oscillator.frequency.setValueAtTime(
-        880,
-        now + 0.4
-    );
-
-
-    gain.gain.setValueAtTime(
-        0.001,
-        now
-    );
-
-
-    gain.gain.exponentialRampToValueAtTime(
-        0.3,
-        now + 0.03
-    );
-
-
-    gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        now + 0.7
-    );
-
-
-    oscillator.connect(gain);
-
-    gain.connect(
-        audioContext.destination
-    );
-
-
-    oscillator.start(now);
-
-    oscillator.stop(
-        now + 0.7
-    );
-
+    if(!soundEnabled || !audioContext) return;
+    const now=audioContext.currentTime;
+    const osc=audioContext.createOscillator();
+    const gain=audioContext.createGain();
+    osc.type="sine";
+    osc.frequency.setValueAtTime(880,now);
+    osc.frequency.setValueAtTime(660,now+0.2);
+    osc.frequency.setValueAtTime(880,now+0.4);
+    gain.gain.setValueAtTime(0.001,now);
+    gain.gain.exponentialRampToValueAtTime(0.3,now+0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001,now+0.7);
+    osc.connect(gain); gain.connect(audioContext.destination);
+    osc.start(now); osc.stop(now+0.7);
 }
-
-
-/* =========================
-   อ่านข้อมูล
-========================= */
-
-/* =========================
-   ข้อมูลจาก Supabase
-========================= */
-
-let incidents = [];
-let knownIncidentIds = new Set();
-let initialized = false;
-let realtimeChannel = null;
-let loading = false;
-let pollTimer = null;
-
-/* =========================
-   แสดงแจ้งเตือนเหตุใหม่
-========================= */
 
 function showNewAlert(){
-    const box = document.getElementById("newAlert");
+    const box=document.getElementById("newAlert");
     if(!box) return;
-
-    box.style.display = "block";
-
-    clearTimeout(window.__newAlertTimer);
-    window.__newAlertTimer = setTimeout(function(){
-        box.style.display = "none";
-    }, 8000);
-
-    try{
-        box.scrollIntoView({behavior:"smooth", block:"center"});
-    }catch(e){}
+    box.style.display="block";
+    clearTimeout(window.alertTimer);
+    window.alertTimer=setTimeout(()=>box.style.display="none",7000);
 }
 
-/* =========================
-   อ่านข้อมูลจาก Supabase
-========================= */
-
-async function getData(){
-    const { data, error } = await supabaseClient
+async function fetchIncidents(){
+    const {data: rows,error}=await supabaseClient
         .from("incidents")
         .select("*")
-        .order("created_at", { ascending:false }).limit(5000);
-
+        .order("created_at",{ascending:false});
     if(error){
-        console.error("❌ Supabase load error:", error);
-        return [];
+        console.error("Supabase read error:",error);
+        return null;
     }
-
-    return (data || []).map(function(item){
-        return {
-            id: item.id,
-            emergencyType: item.emergency_type,
-            peopleCount: item.people_count,
-            dangerLevel: item.danger_level,
-            detail: item.detail,
-            latitude: item.latitude,
-            longitude: item.longitude,
-            status: item.status || "waiting",
-            vehicles: Number(item.vehicles || 0),
-            neededVehicles: Number(item.needed_vehicles || 1),
-            createdAt: item.created_at
-        };
-    });
+    return (rows||[]).map(r=>({
+        id:r.id,
+        emergencyType:r.emergency_type,
+        peopleCount:r.people_count,
+        dangerLevel:r.danger_level,
+        detail:r.detail,
+        latitude:r.latitude,
+        longitude:r.longitude,
+        status:r.status || "waiting",
+        vehicles:Number(r.vehicles||0),
+        neededVehicles:Number(r.needed_vehicles||1),
+        createdAt:r.created_at
+    }));
 }
 
-/* =========================
-   โหลดข้อมูล + ตรวจเหตุใหม่
-========================= */
-
-async function loadData(options){
-    options = options || {};
-    const notify = options.notify !== false;
-
+async function loadData(options={}){
     if(loading) return;
-    loading = true;
+    loading=true;
+    const fresh=await fetchIncidents();
+    loading=false;
+    if(!fresh) return;
 
-    try{
-        const data = await getData();
-        const currentIds = new Set(data.map(function(item){
-            return String(item.id);
-        }));
-
-        if(initialized && notify){
-            let newIncident = false;
-
-            currentIds.forEach(function(id){
-                if(!knownIncidentIds.has(id)){
-                    newIncident = true;
-                }
-            });
-
-            if(newIncident){
-                console.log("🚨 พบเหตุใหม่จากการตรวจฐานข้อมูล");
-                showNewAlert();
-                playNotificationSound();
-            }
-        }
-
-        knownIncidentIds = currentIds;
-        incidents = data;
-        renderData(data);
-        initialized = true;
-
-    }catch(error){
-        console.error("❌ loadData error:", error);
-    }finally{
-        loading = false;
+    const newIds=fresh.map(x=>String(x.id));
+    if(initialized && options.notify!==false){
+        const hasNew=newIds.some(id=>!knownIds.has(id));
+        if(hasNew){ playNotificationSound(); showNewAlert(); }
     }
+    knownIds=new Set(newIds);
+    initialized=true;
+    data=fresh;
+    render();
 }
 
-/* =========================
-   ตรวจฐานข้อมูลทุก 2 วินาที
-   เป็นระบบสำรองกรณี Realtime ไม่ทำงาน
-========================= */
-
-function startPolling(){
-    if(pollTimer) return;
-
-    pollTimer = setInterval(function(){
-        loadData({notify:true});
-    }, 2000);
+function getStatus(status){
+    if(status==="waiting") return "⏳ รอรับเรื่อง";
+    if(status==="responding") return "🚑 กำลังดำเนินการ";
+    if(status==="arrived") return "📍 ถึงที่เกิดเหตุ";
+    if(status==="closed") return "✅ ปิดเหตุแล้ว";
+    return "⏳ รอรับเรื่อง";
 }
 
-/* =========================
-   Filter
-========================= */
-
-function filterData(data){
-
-    const search =
-        document.getElementById("searchInput")
-        .value.toLowerCase().trim();
-
-    const type =
-        document.getElementById("typeFilter").value;
-
-    const severity =
-        document.getElementById("severityFilter").value;
-
-    const status =
-        document.getElementById("statusFilter").value;
-
-    return data.filter(function(item){
-
-        let searchOK = true;
-
-        if(search){
-
-            const text = [
-                item.emergencyType,
-                item.detail,
-                item.peopleCount,
-                item.latitude,
-                item.longitude
-            ].join(" ").toLowerCase();
-
-            searchOK = text.includes(search);
-        }
-
-        const typeOK =
-            !type || item.emergencyType === type;
-
-        const severityOK =
-            !severity || item.dangerLevel === severity;
-
-        const statusOK =
-            !status || item.status === status;
-
-        return searchOK &&
-               typeOK &&
-               severityOK &&
-               statusOK;
+function filterData(){
+    const search=(document.getElementById("searchInput")?.value||"").toLowerCase().trim();
+    const type=document.getElementById("typeFilter")?.value||"";
+    const severity=document.getElementById("severityFilter")?.value||"";
+    const status=document.getElementById("statusFilter")?.value||"";
+    return data.filter(item=>{
+        const text=[item.emergencyType,item.detail,item.peopleCount,item.latitude,item.longitude].join(" ").toLowerCase();
+        return (!search||text.includes(search)) && (!type||item.emergencyType===type) && (!severity||item.dangerLevel===severity) && (!status||item.status===status);
     });
 }
 
+function render(){
+    document.getElementById("total").textContent=data.length;
+    document.getElementById("waiting").textContent=data.filter(x=>x.status==="waiting").length;
+    document.getElementById("responding").textContent=data.filter(x=>x.status==="responding"||x.status==="arrived").length;
+    document.getElementById("vehicles").textContent=data.reduce((s,x)=>s+Number(x.vehicles||0),0);
+    document.getElementById("activeVehicles").textContent=data.filter(x=>x.status==="responding"||x.status==="arrived").reduce((s,x)=>s+Number(x.vehicles||0),0);
 
-/* =========================
-   แสดงข้อมูล
-========================= */
-
-function renderData(data){
-
-    document.getElementById("total").textContent =
-        data.length;
-
-    document.getElementById("waiting").textContent =
-        data.filter(function(item){
-            return item.status === "waiting";
-        }).length;
-
-    document.getElementById("responding").textContent =
-        data.filter(function(item){
-            return item.status === "responding" ||
-                   item.status === "arrived";
-        }).length;
-
-    const totalVehicles =
-        data.reduce(function(total,item){
-            return total + Number(item.vehicles || 0);
-        },0);
-
-    document.getElementById("vehicles").textContent =
-        totalVehicles;
-
-    const activeVehicles =
-        data.reduce(function(total,item){
-
-            if(item.status === "responding" ||
-               item.status === "arrived"){
-
-                return total + Number(item.vehicles || 0);
-            }
-
-            return total;
-
-        },0);
-
-    document.getElementById("activeVehicles").textContent =
-        activeVehicles;
-
-    const filtered = filterData(data);
-
-    document.getElementById("result").textContent =
-        "กำลังแสดง " +
-        filtered.length +
-        " จาก " +
-        data.length +
-        " รายการ";
-
-    const list =
-        document.getElementById("incidentList");
-
-    if(filtered.length === 0){
-
-        list.innerHTML = `
-            <div class="empty">
-                📭 ไม่พบเหตุการณ์
-                <br><br>
-                ลองเปลี่ยนคำค้นหา
-                หรือตัวกรอง
-            </div>
-        `;
-
+    const filtered=filterData().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+    document.getElementById("result").textContent=`กำลังแสดง ${filtered.length} จาก ${data.length} รายการ`;
+    const list=document.getElementById("incidentList");
+    if(!filtered.length){
+        list.innerHTML=`<div class="empty">📭 ไม่พบเหตุการณ์<br><br>ลองเปลี่ยนคำค้นหา หรือตัวกรอง</div>`;
         return;
     }
-
-    const order = {
-        "ร้ายแรงมาก":3,
-        "ร้ายแรง":2,
-        "ปานกลาง":1
-    };
-
-    filtered.sort(function(a,b){
-        const dangerDiff =
-            (order[b.dangerLevel] || 0) -
-            (order[a.dangerLevel] || 0);
-
-        if(dangerDiff !== 0){
-            return dangerDiff;
-        }
-
-        const timeA = new Date(a.createdAt || 0).getTime();
-        const timeB = new Date(b.createdAt || 0).getTime();
-
-        if(timeB !== timeA){
-            return timeB - timeA;
-        }
-
-        return Number(b.id || 0) - Number(a.id || 0);
-    });
-
-    list.innerHTML =
-        filtered.map(function(item){
-
-            let dangerClass = "";
-
-            if(item.dangerLevel === "ร้ายแรงมาก"){
-                dangerClass = "very-serious";
-            }
-            else if(item.dangerLevel === "ร้ายแรง"){
-                dangerClass = "serious";
-            }
-            else{
-                dangerClass = "moderate";
-            }
-
-            const vehicles = Number(item.vehicles || 0);
-            const needed = Number(item.neededVehicles || 1);
-
-            let progress = (vehicles / needed) * 100;
-
-            if(progress > 100){
-                progress = 100;
-            }
-
-            const active =
-                item.status === "responding" ||
-                item.status === "arrived";
-
-            return `
-                <div class="incident ${dangerClass}">
-
-                    <h3>
-                        🚨
-                        ${item.emergencyType || "เหตุฉุกเฉิน"}
-                    </h3>
-
-                    <div class="incident-summary">
-
-                        <div class="incident-summary-title">
-                            📝 สรุปรายละเอียดเหตุการณ์
-                        </div>
-
-                        <div class="summary-row">
-                            <div class="summary-label">
-                                ประเภทเหตุ
-                            </div>
-                            <div class="summary-value">
-                                ${item.emergencyType || "-"}
-                            </div>
-                        </div>
-
-                        <div class="summary-row">
-                            <div class="summary-label">
-                                ระดับความรุนแรง
-                            </div>
-                            <div class="summary-value">
-                                ${item.dangerLevel || "-"}
-                            </div>
-                        </div>
-
-                        <div class="summary-row">
-                            <div class="summary-label">
-                                จำนวนผู้เกี่ยวข้อง
-                            </div>
-                            <div class="summary-value">
-                                👥 ${item.peopleCount || 0} คน
-                            </div>
-                        </div>
-
-                        <div class="summary-row">
-                            <div class="summary-label">
-                                สถานะ
-                            </div>
-                            <div class="summary-value">
-                                <span class="status">
-                                    ${getStatus(item.status)}
-                                </span>
-                            </div>
-                        </div>
-
-                        ${
-                            item.latitude !== null &&
-                            item.latitude !== undefined &&
-                            item.longitude !== null &&
-                            item.longitude !== undefined
-                            ?
-                            `
-                            <div class="summary-row">
-                                <div class="summary-label">
-                                    พิกัด
-                                </div>
-                                <div class="summary-value">
-                                    📍 ${item.latitude}, ${item.longitude}
-                                </div>
-                            </div>
-                            `
-                            :
-                            ""
-                        }
-
-                    </div>
-
-                    <div class="detail">
-                        <b>📄 รายละเอียดเพิ่มเติม</b>
-                        <br><br>
-                        ${item.detail || "ไม่มีรายละเอียดเพิ่มเติม"}
-                    </div>
-
-                    <div class="vehicle-box">
-
-                        <b>
-                            🚑 รถสำหรับเหตุการณ์นี้
-                        </b>
-
-                        <div class="vehicle-number">
-                            ${vehicles} / ${needed} คัน
-                        </div>
-
-                        <div>
-                            ${
-                                active
-                                ?
-                                "🚨 รถกำลังออกไปที่เกิดเหตุ"
-                                :
-                                "⏸️ รถยังไม่ได้ออกปฏิบัติการ"
-                            }
-                        </div>
-
-                        <div class="vehicle-progress">
-                            <div
-                                class="vehicle-progress-bar"
-                                style="width:${progress}%">
-                            </div>
-                        </div>
-
-                    </div>
-
-                    ${
-                        item.latitude !== null &&
-                        item.latitude !== undefined &&
-                        item.longitude !== null &&
-                        item.longitude !== undefined
-                        ?
-                        `
-                        <button
-                            class="green"
-                            onclick="openMap(${item.latitude},${item.longitude})">
-                            📍 เปิดแผนที่
-                        </button>
-                        `
-                        :
-                        ""
-                    }
-
-                    <button
-                        class="orange"
-                        onclick="addVehicle(${item.id})">
-                        🚑 + รถ
-                    </button>
-
-                    <button
-                        class="gray"
-                        onclick="changeStatus(${item.id},'responding')">
-                        🚑 กำลังดำเนินการ
-                    </button>
-
-                    <button
-                        class="blue"
-                        onclick="changeStatus(${item.id},'arrived')">
-                        📍 ถึงที่เกิดเหตุ
-                    </button>
-
-                    <button
-                        class="green"
-                        onclick="changeStatus(${item.id},'closed')">
-                        ✅ ปิดเหตุ
-                    </button>
-
-                    <button
-                        class="red"
-                        onclick="deleteIncident(${item.id})">
-                        🗑️ ลบ
-                    </button>
-
-                </div>
-            `;
-
-        }).join("");
+    list.innerHTML=filtered.map(item=>{
+        const dangerClass=item.dangerLevel==="ร้ายแรงมาก"?"very-serious":item.dangerLevel==="ร้ายแรง"?"serious":"moderate";
+        const vehicles=Number(item.vehicles||0), needed=Number(item.neededVehicles||1);
+        const progress=Math.min(100,(vehicles/needed)*100);
+        const active=item.status==="responding"||item.status==="arrived";
+        const time=item.createdAt?new Date(item.createdAt).toLocaleString("th-TH"):"-";
+        return `<div class="incident ${dangerClass}">
+            <h3>🚨 ${escapeHtml(item.emergencyType||"เหตุฉุกเฉิน")}</h3>
+            <div class="incident-summary">
+                <div class="incident-summary-title">📝 สรุปรายละเอียดเหตุการณ์</div>
+                <div class="summary-row"><div class="summary-label">ประเภทเหตุ</div><div class="summary-value">${escapeHtml(item.emergencyType||"-")}</div></div>
+                <div class="summary-row"><div class="summary-label">ระดับความรุนแรง</div><div class="summary-value">${escapeHtml(item.dangerLevel||"-")}</div></div>
+                <div class="summary-row"><div class="summary-label">จำนวนผู้เกี่ยวข้อง</div><div class="summary-value">👥 ${escapeHtml(item.peopleCount??0)} คน</div></div>
+                <div class="summary-row"><div class="summary-label">สถานะ</div><div class="summary-value"><span class="status">${getStatus(item.status)}</span></div></div>
+                <div class="summary-row"><div class="summary-label">เวลาแจ้งเหตุ</div><div class="summary-value">${time}</div></div>
+                ${item.latitude!=null&&item.longitude!=null?`<div class="summary-row"><div class="summary-label">พิกัด</div><div class="summary-value">📍 ${item.latitude}, ${item.longitude}</div></div>`:""}
+            </div>
+            <div class="detail"><b>📄 รายละเอียดเพิ่มเติม</b><br><br>${escapeHtml(item.detail||"ไม่มีรายละเอียดเพิ่มเติม")}</div>
+            <div class="vehicle-box"><b>🚑 รถสำหรับเหตุการณ์นี้</b><div class="vehicle-number">${vehicles}/${needed} คัน</div><div>${active?"🚨 รถกำลังออกไปที่เกิดเหตุ":"⏸️ รถยังไม่ได้ออกปฏิบัติการ"}</div><div class="vehicle-progress"><div class="vehicle-progress-bar" style="width:${progress}%"></div></div></div>
+            ${item.latitude!=null&&item.longitude!=null?`<button class="green" onclick="openMap(${Number(item.latitude)},${Number(item.longitude)})">📍 เปิดแผนที่</button>`:""}
+            <button class="orange" onclick="addVehicle(${Number(item.id)})">🚑 + รถ</button>
+            <button class="gray" onclick="changeStatus(${Number(item.id)},'responding')">🚑 กำลังดำเนินการ</button>
+            <button class="blue" onclick="changeStatus(${Number(item.id)},'arrived')">📍 ถึงที่เกิดเหตุ</button>
+            <button class="green" onclick="changeStatus(${Number(item.id)},'closed')">✅ ปิดเหตุ</button>
+            <button class="red" onclick="deleteIncident(${Number(item.id)})">🗑️ ลบ</button>
+        </div>`;
+    }).join("");
 }
 
-
-/* =========================
-   โหลดข้อมูลหลัก
-========================= */
-
-// ใช้ loadData() ตัวเดียวด้านบน
-
-
-/* =========================
-   เพิ่มรถ
-========================= */
+function escapeHtml(value){
+    return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
 
 async function addVehicle(id){
-
-    const item = incidents.find(function(x){
-        return Number(x.id) === Number(id);
-    });
-
-    if(!item){
-        return;
-    }
-
-    const needed = Number(item.neededVehicles || 1);
-    const current = Number(item.vehicles || 0);
-
-    if(current >= needed){
-
-        alert(
-            "🚑 รถครบตามจำนวนที่ระบบแนะนำแล้ว"
-        );
-
-        return;
-    }
-
-    const newCount = current + 1;
-
-    const { error } = await supabaseClient
-        .from("incidents")
-        .update({
-            vehicles: newCount
-        })
-        .eq("id", id);
-
-    if(error){
-
-        console.error("Supabase update error:", error);
-
-        alert(
-            "❌ เพิ่มรถไม่สำเร็จ\n" +
-            error.message
-        );
-
-        return;
-    }
-
-    await loadData();
+    const item=data.find(x=>Number(x.id)===Number(id)); if(!item) return;
+    const needed=Number(item.neededVehicles||1), current=Number(item.vehicles||0);
+    if(current>=needed){alert("🚑 รถครบตามจำนวนที่ระบบแนะนำแล้ว");return;}
+    const {error}=await supabaseClient.from("incidents").update({vehicles:current+1}).eq("id",id);
+    if(error){alert("❌ อัปเดตจำนวนรถไม่สำเร็จ\n"+error.message);return;}
+    await loadData({notify:false});
 }
-
-
-/* =========================
-   เปลี่ยนสถานะ
-========================= */
 
 async function changeStatus(id,status){
-
-    const { error } = await supabaseClient
-        .from("incidents")
-        .update({
-            status: status
-        })
-        .eq("id", id);
-
-    if(error){
-
-        console.error("Supabase status error:", error);
-
-        alert(
-            "❌ เปลี่ยนสถานะไม่สำเร็จ\n" +
-            error.message
-        );
-
-        return;
-    }
-
-    await loadData();
+    const {error}=await supabaseClient.from("incidents").update({status}).eq("id",id);
+    if(error){alert("❌ เปลี่ยนสถานะไม่สำเร็จ\n"+error.message);return;}
+    await loadData({notify:false});
 }
-
-
-/* =========================
-   ลบเหตุการณ์
-========================= */
 
 async function deleteIncident(id){
-
-    if(!confirm(
-        "ต้องการลบเหตุการณ์นี้ใช่ไหม?"
-    )){
-        return;
-    }
-
-    const { error } = await supabaseClient
-        .from("incidents")
-        .delete()
-        .eq("id", id);
-
-    if(error){
-
-        console.error("Supabase delete error:", error);
-
-        alert(
-            "❌ ลบเหตุการณ์ไม่สำเร็จ\n" +
-            error.message
-        );
-
-        return;
-    }
-
-    await loadData();
+    if(!confirm("ต้องการลบเหตุการณ์นี้ใช่ไหม?")) return;
+    const {error}=await supabaseClient.from("incidents").delete().eq("id",id);
+    if(error){alert("❌ ลบเหตุการณ์ไม่สำเร็จ\n"+error.message);return;}
+    await loadData({notify:false});
 }
 
+function openMap(latitude,longitude){
+    window.open("https://www.google.com/maps?q="+latitude+","+longitude,"_blank");
+}
+function clearFilters(){
+    document.getElementById("searchInput").value="";
+    document.getElementById("typeFilter").value="";
+    document.getElementById("severityFilter").value="";
+    document.getElementById("statusFilter").value="";
+    render();
+}
+function logout(){ localStorage.removeItem("emergencyOfficerLogin"); window.location.href="login.html"; }
 
-/* =========================
-   Supabase Realtime
-========================= */
+["searchInput","typeFilter","severityFilter","statusFilter"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener("input",render);
+    if(el && id!=="searchInput") el.addEventListener("change",render);
+});
 
 function startRealtime(){
-    if(realtimeChannel){
-        return;
-    }
-
-    realtimeChannel = supabaseClient
-        .channel("incidents-realtime")
-        .on(
-            "postgres_changes",
-            {
-                event:"INSERT",
-                schema:"public",
-                table:"incidents"
-            },
-            async function(payload){
-                console.log("🚨 REALTIME INSERT:", payload.new);
-                await loadData({notify:true});
-            }
-        )
-        .on(
-            "postgres_changes",
-            {
-                event:"UPDATE",
-                schema:"public",
-                table:"incidents"
-            },
-            async function(payload){
-                console.log("🔄 REALTIME UPDATE:", payload.new);
-                await loadData({notify:false});
-            }
-        )
-        .on(
-            "postgres_changes",
-            {
-                event:"DELETE",
-                schema:"public",
-                table:"incidents"
-            },
-            async function(payload){
-                console.log("🗑️ REALTIME DELETE:", payload.old);
-                await loadData({notify:false});
-            }
-        )
-        .subscribe(function(status){
-            console.log("📡 Supabase Realtime status:", status);
-
-            if(status === "SUBSCRIBED"){
-                console.log("✅ Realtime เชื่อมต่อสำเร็จ");
-            }
-
-            if(status === "CHANNEL_ERROR" ||
-               status === "TIMED_OUT" ||
-               status === "CLOSED"){
-                console.warn("⚠️ Realtime มีปัญหา — ระบบ Polling ยังทำงานอยู่");
-            }
-        });
+    supabaseClient.channel("incidents-dashboard")
+        .on("postgres_changes",{event:"INSERT",schema:"public",table:"incidents"},async payload=>{
+            console.log("New incident:",payload.new);
+            await loadData({notify:true});
+        })
+        .on("postgres_changes",{event:"UPDATE",schema:"public",table:"incidents"},async()=>await loadData({notify:false}))
+        .on("postgres_changes",{event:"DELETE",schema:"public",table:"incidents"},async()=>await loadData({notify:false}))
+        .subscribe(status=>console.log("Realtime status:",status));
 }
 
-/* =========================
-   ล้าง Filter
-========================= */
-
-function clearFilters(){
-
-    document.getElementById("searchInput").value = "";
-    document.getElementById("typeFilter").value = "";
-    document.getElementById("severityFilter").value = "";
-    document.getElementById("statusFilter").value = "";
-
-    loadData();
-}
-
-
-/* =========================
-   Logout
-========================= */
-
-function logout(){
-
-    localStorage.removeItem(
-        "emergencyOfficerLogin"
-    );
-
-    window.location.href =
-        "login.html";
-}
-
-
-/* =========================
-   Search
-========================= */
-
-document
-.getElementById("searchInput")
-.addEventListener("input", loadData);
-
-document
-.getElementById("typeFilter")
-.addEventListener("change", loadData);
-
-document
-.getElementById("severityFilter")
-.addEventListener("change", loadData);
-
-document
-.getElementById("statusFilter")
-.addEventListener("change", loadData);
-
-
-/* =========================
-   เปิดแผนที่
-========================= */
-
-function openMap(
-    latitude,
-    longitude
-){
-
-    window.open(
-
-        "https://www.google.com/maps?q=" +
-        latitude +
-        "," +
-        longitude,
-
-        "_blank"
-
-    );
-
-}
-
-
-/* =========================
-   ล้าง Filter
-========================= */
-
-function clearFilters(){
-
-    document.getElementById(
-        "searchInput"
-    ).value = "";
-
-
-    document.getElementById(
-        "typeFilter"
-    ).value = "";
-
-
-    document.getElementById(
-        "severityFilter"
-    ).value = "";
-
-
-    document.getElementById(
-        "statusFilter"
-    ).value = "";
-
-
-    loadData();
-
-}
-
-
-/* =========================
-   Logout
-========================= */
-
-function logout(){
-
-    localStorage.removeItem(
-        "emergencyOfficerLogin"
-    );
-
-
-    window.location.href =
-        "login.html";
-
-}
-
-
-/* =========================
-   Search
-========================= */
-
-document
-.getElementById(
-    "searchInput"
-)
-.addEventListener(
-    "input",
-    loadData
-);
-
-
-document
-.getElementById(
-    "typeFilter"
-)
-.addEventListener(
-    "change",
-    loadData
-);
-
-
-document
-.getElementById(
-    "severityFilter"
-)
-.addEventListener(
-    "change",
-    loadData
-);
-
-
-document
-.getElementById(
-    "statusFilter"
-)
-.addEventListener(
-    "change",
-    loadData
-);
-
-
-/* =========================
-   เริ่มต้น
-========================= */
-
-loadData({notify:false});
-startRealtime();
-startPolling();
-
+(async function(){
+    await loadData({notify:false});
+    startRealtime();
+    setInterval(()=>loadData({notify:true}),2000);
+})();
 </script>
 
 </body>
